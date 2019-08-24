@@ -1,3 +1,4 @@
+import Model from "./Model";
 import Options from "./Options";
 import ErrorBuilder from "./Error";
 import { expect, assert } from "chai";
@@ -18,4 +19,20 @@ describe("Errors", () => {
     );
   });
 });
+describe("Model", () => {
+  const options: Options = {
+    values: 10,
+    range: [0, 10]
+  };
+  const model = new Model(options);
+  it("Check params type", () => {
+    expect(model.checkType("values", 10)).to.equal(10);
+    expect(model.checkType("values", [0, 10])).to.deep.equal([0, 10]);
+    expect(model.checkType("values", "string")).to.equal("string");
 
+    expect(model.checkType("range", [0, 10])).to.deep.equal([0, 10]);
+    expect(model.checkType("range", ["test1", "test2", "test3"])).to.deep.equal(
+      ["test1", "test2", "test3"]
+    );
+  });
+});
