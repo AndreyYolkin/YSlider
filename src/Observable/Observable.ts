@@ -22,7 +22,9 @@ class Observable {
     this._observers[type] = this._observers[type].filter(el => el !== callback);
   }
   emit(type: string, data?: any) {
-    this._observers[type].forEach(observer => observer(data));
+    if (this._observers.hasOwnProperty(type)) {
+      this._observers[type].forEach(observer => observer(data));
+    }
   }
 }
 
