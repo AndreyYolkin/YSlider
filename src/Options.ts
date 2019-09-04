@@ -1,4 +1,4 @@
-export default interface Options {
+export interface Options {
   values: number | Array<number> | string;
   range: Array<number> | Array<string>;
   step?: number;
@@ -11,3 +11,5 @@ export const enum orientation {
   vertical,
   horizontal
 }
+
+export default Options;
