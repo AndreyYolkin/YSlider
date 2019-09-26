@@ -1,5 +1,5 @@
 import Model from "./Model";
-import Options from "./Options";
+import { Options } from "../Options";
 import ErrorBuilder from "./Error";
 import { expect, assert } from "chai";
 import { spy, SinonSpy } from "sinon";
@@ -26,13 +26,27 @@ describe("Model", () => {
   };
   const model = new Model(options);
   it("Check params type", () => {
-    expect(model.checkType("values", 10)).to.equal(10);
-    expect(model.checkType("values", [0, 10])).to.deep.equal([0, 10]);
-    expect(model.checkType("values", "string")).to.equal("string");
+    expect(model.checkOptionType("values", 10)).to.equal(10);
+    expect(model.checkOptionType("values", [0, 10])).to.deep.equal([0, 10]);
+    expect(model.checkOptionType("values", "string")).to.equal("string");
 
-    expect(model.checkType("range", [0, 10])).to.deep.equal([0, 10]);
-    expect(model.checkType("range", ["test1", "test2", "test3"])).to.deep.equal(
+    expect(model.checkOptionType("range", [0, 10])).to.deep.equal([0, 10]);
+    expect(model.checkOptionType("range", ["test1", "test2", "test3"])).to.deep.equal(
       ["test1", "test2", "test3"]
     );
   });
+  it("Check wrong params type", () => {
+    expect(model.checkOptionType("values", {})).to.be.an.instanceof(ErrorBuilder);
+    expect(model.checkOptionType("values", [0])).to.deep.equal([0]);
+    expect(model.checkOptionType("values", "string")).to.equal("string");
+
+    expect(model.checkOptionType("range", [0, 10])).to.deep.equal([0, 10]);
+    expect(model.checkOptionType("range", ["test1", "test2", "test3"])).to.deep.equal(
+      ["test1", "test2", "test3"]
+    );
+  });
+  /*it("Validate value", () => {
+    expect(model.validateOptions({ values: 5 })).to.deep.equal({ values: 5 });
+    expect(model.validateOptions({ values: [0, 10] })).to.deep.equal({ values: [0, 10] });
+  });*/
 });
