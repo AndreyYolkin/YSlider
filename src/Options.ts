@@ -1,15 +1,11 @@
 export interface Options {
   values: number | Array<number> | string;
   range: Array<number> | Array<string>;
+  connects?: boolean | Array<boolean>;
   step?: number;
-  orientation?: orientation;
+  orientation?: "horizontal" | "vertical";
   displaySteps?: boolean;
   displayBubbles?: boolean;
-}
-
-export const enum orientation {
-  vertical,
-  horizontal
 }
 
 export default Options;
