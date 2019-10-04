@@ -2,7 +2,7 @@ class Observable {
   private _observers: {
     [key: string]: Array<Function>;
   } = {};
-  constructror() {
+  constructor() {
     this._observers = {};
 
     this.subscribe = this.subscribe.bind(this);
