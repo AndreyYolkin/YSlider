@@ -8,4 +8,14 @@ export interface Options {
   displayBubbles?: boolean;
 }
 
+export const defaults: Options = {
+  values: 0,
+  range: [0, 100],
+  connects: false,
+  step: 1,
+  orientation: "horizontal",
+  displayBubbles: false,
+  displaySteps: false
+}
+
 export default Options;
