@@ -1,7 +1,7 @@
-import Observable from "../Observable/Observable";
-import Options from "../Options";
+import Observable from "../../Observable/Observable";
+import Options from "../../Options";
 
-export class Slider extends Observable {
+export class Panel extends Observable{
     root: HTMLElement;
 
     private options: Options;
@@ -13,17 +13,15 @@ export class Slider extends Observable {
 
     _createElement(name: string = "div", attributes?: any) {
         const element = document.createElement(name);
-        
         Object.keys(attributes).forEach(attribute => {
             element.setAttribute(attribute, attributes[attribute]);
         })
-
         return element;
     }
 
     draw(root: HTMLElement, options: Options) {
-        root.appendChild(this._createElement("div", {class: `y-slider y-slider_${options.orientation}`}))
+        root.appendChild(this._createElement("div", {class: `y-panel`}))
     }
 }
 
-export default Slider
+export default Panel

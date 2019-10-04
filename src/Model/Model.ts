@@ -1,17 +1,11 @@
 import Observable from "../Observable/Observable";
-import Options from "../Options";
+import {Options, defaults} from "../Options";
 import ErrorBuilder from "./Error";
 
 class Model extends Observable {
-  private state: Options;
+  private state!: Options;
   private defaults: Options = {
-    values: 0,
-    range: [0, 100],
-    connects: false,
-    step: 1,
-    orientation: "horizontal",
-    displayBubbles: false,
-    displaySteps: false
+    ...defaults
   };
   constructor(options: Options) {
     super();
@@ -23,7 +17,6 @@ class Model extends Observable {
     this.setState = this.setState.bind(this);
     this.setValue = this.setValue.bind(this);
 
-    this.state = this.defaults;
     this.setState(options);
   }
   _isValidType(value: any, ...types: Array<string>) {
