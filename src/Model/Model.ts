@@ -1,5 +1,5 @@
 import Observable from "../Observable/Observable";
-import {Options, defaults} from "../Options";
+import { Options, defaults } from "../Options";
 import ErrorBuilder from "./Error";
 
 class Model extends Observable {
@@ -19,81 +19,34 @@ class Model extends Observable {
 
     this.setState(options);
   }
-  _isValidType(value: any, ...types: Array<string>) {
-    let valid: Array<boolean> = [];
-    types.forEach(type => {
-      switch (type) {
-        case "number": {
-          valid.push(typeof value === "number");
-          break;
-        }
-        case "string": {
-          valid.push(typeof value === "string");
-          break;
-        }
-        case "boolean": {
-          valid.push(typeof value === "boolean");
-          break;
-        }
-        case "arrayOfNumbers": {
-          valid.push(
-            Array.isArray(value) &&
-              !!value.filter((a: any) => typeof a === "number")
-          );
-          break;
-        }
-        case "arrayOfStrings": {
-          valid.push(
-            Array.isArray(value) &&
-              !!value.filter((a: any) => typeof a === "string")
-          );
-          break;
-        }
-        case "arrayOfBooleans": {
-          valid.push(
-            Array.isArray(value) &&
-              !!value.filter((a: any) => typeof a === "boolean")
-          );
-          break;
-        }
-        case "orientation": {
-          valid.push(value === "horizontal" || value === "vertical");
-        }
-        default: {
-          valid.push(false);
-        }
-      }
-    });
-    return valid.includes(true);
-  }
-  
+
   checkOptionType(option: string, value: any) {
     let types: Array<string> = [];
     switch (option) {
       case "values": {
-         types = ["number", "arrayOfNumbers", "string"];
-         break;
+        types = ["number", "arrayOfNumbers", "string"];
+        break;
       }
       case "range": {
-         types = ["arrayOfStrings", "arrayOfNumbers"];
-         break;
+        types = ["arrayOfStrings", "arrayOfNumbers"];
+        break;
       }
       case "connects": {
-         types = ["boolean", "arrayOfBooleans"];
-         break;
+        types = ["boolean", "arrayOfBooleans"];
+        break;
       }
       case "step": {
-         types = ["number"];
-         break;
+        types = ["number"];
+        break;
       }
       case "orientation": {
-         types = ["orientation"];
-         break;
+        types = ["orientation"];
+        break;
       }
       case "displaySteps":
       case "displayBubbles": {
-         types = ["boolean"];
-         break;
+        types = ["boolean"];
+        break;
       }
       default: {
         types = [];
@@ -176,13 +129,14 @@ class Model extends Observable {
           }
         }
       });
-      return { ..._state };
+      const state = keys.reduce((a:Partial<Options>, i) => a = {...a, [i]:_state[i]}, {});
+      return { ...state };
     } catch (e) {
       return e;
     }
   }
 
-  setValue(values: number | Array<number> | string) {
+  setValue(values: number | Array<number> /*| string*/) {
     let _state = { ...this.state },
       range = _state.range,
       step = _state.step;
@@ -210,7 +164,39 @@ class Model extends Observable {
     return { ...this.state };
   }
 
-  private _getValidatedRange(range: Array<number> | Array<string>) {
+  private _isValidType(value: any, ...types: Array<string>) {
+    let valid: Array<boolean> = [];
+    types.forEach(type => {
+      switch (type) {
+        case "number":
+        case "string":
+        case "boolean": {
+          valid.push(typeof value === type);
+          break;
+        }
+        case "arrayOfNumbers":
+        case "arrayOfStrings":
+        case "arrayOfBooleans": {
+          valid.push(
+            Array.isArray(value) &&
+              !!value.filter(
+                (a: any) => typeof a === type.slice(7, -1).toLowerCase()
+              )
+          );
+          break;
+        }
+        case "orientation": {
+          valid.push(value === "horizontal" || value === "vertical");
+        }
+        default: {
+          valid.push(false);
+        }
+      }
+    });
+    return valid.includes(true);
+  }
+
+  private _getValidatedRange(range: Array<number> /*| Array<string>*/) {
     if (range.length === 2 && typeof range[0] === "number") {
       let _length = Number(range[1]) - Number(range[0]);
       if (_length < 0) {
@@ -243,8 +229,8 @@ class Model extends Observable {
   }
 
   private _getValidatedSliderValue(
-    values: number | Array<number> | string,
-    range: Array<number> | Array<string>,
+    values: number | Array<number> /*| string*/,
+    range: Array<number> /*| Array<string>*/,
     step: number = 1
   ) {
     const _checkRange = (
@@ -292,11 +278,6 @@ class Model extends Observable {
     if (Array.isArray(values) && range.length === 2) {
       let _values = values.map(value => {
         return _checkRange(value, range, step);
-      });
-      _values.forEach((_, i: number) => {
-        if (i && _values[i] <= _values[i - 1]) {
-          _values[i] = _values[i - 1] + step;
-        }
       });
       return _values;
     }
