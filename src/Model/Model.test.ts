@@ -48,5 +48,7 @@ describe("Model", () => {
   it("Validate value", () => {
     expect(model.validateOptions({ values: 5 })).to.deep.equal({ values: 5 });
     expect(model.validateOptions({ values: [0, 10] })).to.deep.equal({ values: [0, 10] });
+    expect(model.validateOptions({ values: [0, 10], connects: [true, false, true] })).to.deep.equal({ values: [0, 10], connects: [true, false, true] });
+    expect(model.validateOptions({ displaySteps: true })).to.deep.equal({ displaySteps: true });
   });
 });

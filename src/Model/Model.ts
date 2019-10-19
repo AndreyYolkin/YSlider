@@ -1,6 +1,7 @@
 import Observable from "../Observable/Observable";
 import { Options, defaults } from "../Options";
 import ErrorBuilder from "./Error";
+import { _asArray } from "../tools";
 
 class Model extends Observable {
   private state!: Options;
@@ -24,11 +25,11 @@ class Model extends Observable {
     let types: Array<string> = [];
     switch (option) {
       case "values": {
-        types = ["number", "arrayOfNumbers", "string"];
+        types = ["number", "arrayOfNumbers" /*, "string"*/];
         break;
       }
       case "range": {
-        types = ["arrayOfStrings", "arrayOfNumbers"];
+        types = [/*"arrayOfStrings",*/ "arrayOfNumbers"];
         break;
       }
       case "connects": {
@@ -55,16 +56,17 @@ class Model extends Observable {
     if (this._isValidType(value, ...types)) {
       return value;
     }
+
     return new ErrorBuilder(option, ...types);
   }
 
   validateOptions(options: any) {
     let keys: Array<string> = Object.keys(options);
 
-    keys = keys.filter((key: string) =>
-      this.checkOptionType(key, options[key])
+    keys = keys.filter(
+      (key: string) =>
+        !(this.checkOptionType(key, options[key]) instanceof ErrorBuilder)
     );
-
     let _state = { ...this.state };
 
     let order = [
@@ -80,7 +82,7 @@ class Model extends Observable {
       order.forEach(key => {
         switch (key) {
           case "range": {
-            let range = options["range"];
+            const { range } = options;
             let result = this._getValidatedRange(range);
             if (result instanceof ErrorBuilder) {
               throw result;
@@ -90,8 +92,8 @@ class Model extends Observable {
             break;
           }
           case "step": {
-            let step = options["step"],
-              range = _state.range;
+            const { step } = options,
+              { range } = _state;
             let result = this._getValidatedStep(step, range);
             if (result instanceof ErrorBuilder) {
               throw result;
@@ -101,9 +103,8 @@ class Model extends Observable {
             break;
           }
           case "values": {
-            let values = options["values"],
-              range = _state.range,
-              step = _state.step;
+            const { values } = options,
+              { range, step } = _state;
             let result = this._getValidatedSliderValue(values, range, step);
             if (result instanceof ErrorBuilder) {
               throw result;
@@ -112,24 +113,39 @@ class Model extends Observable {
             }
             break;
           }
+          case "connects": {
+            const { values } = _state,
+              { connects } = options;
+            if (Array.isArray(connects)) {
+              if (_asArray(values).length != connects.length - 1) {
+                throw new ErrorBuilder(
+                  "connects",
+                  "boolean",
+                  "be an array and match handle count"
+                );
+              }
+            }
+            _state.connects = connects;
+            break;
+          }
           case "orientation": {
-            let orientation = options["orientation"];
-            _state.orientation = orientation;
+            _state.orientation = options.orientation;
             break;
           }
           case "displaySteps": {
-            let displaySteps = options["displaySteps"];
-            _state.displaySteps = displaySteps;
+            _state.displaySteps = options.displaySteps;
             break;
           }
           case "displayBubbles": {
-            let displayBubbles = options["displayBubbles"];
-            _state.displayBubbles = displayBubbles;
+            _state.displayBubbles = options.displayBubbles;
             break;
           }
         }
       });
-      const state = keys.reduce((a:Partial<Options>, i) => a = {...a, [i]:_state[i]}, {});
+      const state = keys.reduce(
+        (a: Partial<Options>, i) => (a = { ...a, [i]: _state[i] }),
+        {}
+      );
       return { ...state };
     } catch (e) {
       return e;
@@ -149,7 +165,7 @@ class Model extends Observable {
     }
   }
 
-  setState(state: Partial<Options>) {
+  setState(state: Partial<Options>) {                                                                    
     let newState = this.validateOptions(state);
     if (newState instanceof ErrorBuilder) {
       newState.show();
