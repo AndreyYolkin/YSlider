@@ -1,44 +1,96 @@
 import Observable from "../../Observable/Observable";
 import Options from "../../Options";
-import createElement from "../createElement";
-import Handle from "./Handle";
-import { Connect } from "./Connect";
-import Model from "../../Model/Model";
+import { _createElement } from "../../tools";
+import Handle from "../Handle/Handle";
+import { Connect } from "../Connect/Connect";
+import "./Slider.scss";
 
 export class Slider extends Observable {
-    root: HTMLElement;
-    handle!: Handle;
-    connect!: Connect;
-    options: Options;
+  root: HTMLElement;
+  slider!: HTMLElement;
+  base!: HTMLElement;
+  handles!: HTMLElement;
+  connects!: HTMLElement;
+  handlesList: Array<Handle>;
+  connectsList: Array<Connect>;
+  options!: Options;
+  orientation: Options["orientation"];
 
-    constructor(model: Model, root: HTMLElement) {
-        super();
-        this.root = root;
-        this.options = model.getState();
-        this.redraw = this.redraw.bind(this);
-        this.redraw();
-    }
+  constructor(root: JQuery<HTMLElement>) {
+    super();
+    this.root = root[0];
+    this.handlesList = [];
+    this.connectsList = [];
+    this.onResize = this.onResize.bind(this);
+    window.onresize = this.onResize;
+    this.orientation = "horizontal";
+    this.init();
+  }
 
-    redraw() {
-        this.drawSlider();
-        this.drawConnects();
-        this.drawHandlers();
-    }
-    
-    drawSlider() {
-        this.root.innerHTML = "";
-        const slider = createElement("div", {class: `y-slider y-slider_${this.options.orientation}`})
-        this.root.appendChild(slider);
-    }
-    
-    drawHandlers() {
-        this.handle = new Handle();
-    }
+  init() {
+    this.drawSlider();
+    this.drawHandles(this.handlesList.length);
+    this.drawConnects();
+  }
 
-    drawConnects() {
-        const slider = createElement("div", {class: `y-slider y-slider_${this.options.orientation}`})
-        this.root.appendChild(slider);
+  drawSlider(orientation = this.orientation) {
+    this.orientation = orientation;
+    this.slider = _createElement("div", {
+      class: `y-slider y-slider__${orientation}`
+    });
+    this.base = _createElement("div", { class: `y-slider__base` });
+    this.connects = _createElement("div", { class: `y-slider__connects` });
+    this.handles = _createElement("div", { class: `y-slider__handles` });
+
+    this.root.innerHTML = "";
+    this.base.appendChild(this.connects);
+    this.base.appendChild(this.handles);
+    this.slider.appendChild(this.base);
+    this.root.appendChild(this.slider);
+  }
+
+  drawHandles(count: number) {
+    this.handles.innerHTML = "";
+    this.handlesList = [];
+    for (let i = 0; i < count; i++) {
+      let handle = new Handle();
+      handle.subscribe("handleDrag", this.onHandleDrag);
+      this.handlesList.push(handle);
+      this.handles.appendChild(handle.handle);
     }
+    this.setHandles();
+  }
+
+  setHandles() {
+    this.handlesList.forEach((handle, index) => {
+      handle.draw();
+    });
+  }
+
+  drawConnects() {}
+
+  onHandleDrag = (event: MouseEvent) => {
+    this.emit("handleDrag", event);
+    document.addEventListener("mouseup", this.onMouseUp);
+    document.addEventListener("mousemove", this.onMouseMove);
+  };
+
+  onMouseMove = (event: MouseEvent) => {
+    this.handlesList
+      .filter(a => a.isActive)
+      .forEach(handle => (handle.distance = event.clientX - handle.shift));
+    this.emit("handleMove");
+  };
+
+  onMouseUp = (event: MouseEvent) => {
+    document.removeEventListener("mouseup", this.onMouseUp);
+    document.removeEventListener("mousemove", this.onMouseMove);
+    this.handlesList.forEach(handle => handle.setInactive());
+  };
+
+  onResize = (event: Event) => {
+    this.emit("windowResized");
+  };
 }
 
-export default Slider
+export default Slider;
