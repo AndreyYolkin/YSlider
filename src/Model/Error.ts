@@ -1,4 +1,4 @@
-export default class ErrorBuilder extends Error {
+export class ErrorBuilder extends Error {
   private _error: string;
   private _types: Array<string>;
   constructor(key: string, ...types: Array<string>) {
@@ -55,3 +55,5 @@ export default class ErrorBuilder extends Error {
     console.error(this.getError());
   }
 }
+
+export default ErrorBuilder;
