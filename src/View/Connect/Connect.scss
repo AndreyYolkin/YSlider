@@ -1,0 +1,8 @@
+$purple: #6200ee;
+.y-slider__connect {
+  flex-shrink: 1;
+  height: 100%;
+  &-visible {
+    background: $purple;
+  }
+}

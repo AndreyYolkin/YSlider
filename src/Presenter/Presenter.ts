@@ -9,7 +9,18 @@ export class Presenter {
     this.model = model;
     this.view = view;
     this.updateView = this.updateView.bind(this);
-    this.view.drawHandles(_asArray(model.getState().values).length);
+    console.log(this.model.getState());
+    let valuesCount = _asArray(model.getState().values).length,
+        connects = model.getState().connects;
+    console.log(connects);
+    this.view
+      .initHandles(valuesCount)
+      .initConnects(valuesCount + 1)
+      .setConnectsVisibility(
+        Array.isArray(connects)
+          ? _asArray(connects)
+          : [false, ...Array(valuesCount - 1).fill(connects), false]
+      );
     this.view.subscribe("handleMove", this.calculate);
     this.view.subscribe("windowResized", this.updateView);
     this.updateView();
@@ -68,14 +79,25 @@ export class Presenter {
   updateView() {
     const { width, left } = this.view.slider.getBoundingClientRect();
     const handles = this.view.handlesList;
+    const connects = this.view.connectsList;
     const { values, range } = this.model.getState();
+
     handles.forEach((handle, index) => {
       handle.position =
         ((_asArray(values)[index] - range[0]) * width) / (range[1] - range[0]) -
         6;
       handle.distance = handle.position + left - 3;
       handle.value = Array.isArray(values) ? values[index] : values;
-      handle.draw();
     });
+
+    const points = [range[0], ..._asArray(values), range[1]];
+    console.log(points);
+    connects.forEach((connect, index) => {
+      connect.flexGrow =
+        (points[index + 1] - points[index]) / (range[1] - range[0]);
+    });
+
+    this.view.drawHandles();
+    this.view.drawConnects();
   }
 }
