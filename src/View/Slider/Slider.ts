@@ -67,6 +67,12 @@ export class Slider extends Observable {
       handle.draw();
     });
   }
+  
+  setHandlesBuble(state: boolean) {
+    this.handlesList.forEach(handle => {
+      handle.displayBubble = state;
+    });
+  }
 
   initConnects(count: number) {
     this.connects.innerHTML = "";
@@ -95,6 +101,7 @@ export class Slider extends Observable {
         connect.setInvisible();
       }
     });
+    this.drawConnects();
   }
 
   onHandleDrag = (event: MouseEvent) => {

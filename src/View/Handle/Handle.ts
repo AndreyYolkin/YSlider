@@ -11,6 +11,7 @@ export class Handle extends Observable {
   position!: number;
   distance!: number;
   shift!: number;
+  displayBubble!: boolean;
   private active: boolean;
   constructor() {
     super();
@@ -42,7 +43,9 @@ export class Handle extends Observable {
 
   setActive() {
     this.active = true;
-    this.bubble.classList.add("y-slider__bubble-active");
+    if (this.displayBubble) {
+      this.bubble.classList.add("y-slider__bubble-active");
+    }
   }
 
   setInactive() {

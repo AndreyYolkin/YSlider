@@ -9,10 +9,8 @@ export class Presenter {
     this.model = model;
     this.view = view;
     this.updateView = this.updateView.bind(this);
-    console.log(this.model.getState());
     let valuesCount = _asArray(model.getState().values).length,
         connects = model.getState().connects;
-    console.log(connects);
     this.view
       .initHandles(valuesCount)
       .initConnects(valuesCount + 1)
@@ -21,6 +19,7 @@ export class Presenter {
           ? _asArray(connects)
           : [false, ...Array(valuesCount - 1).fill(connects), false]
       );
+    this.view.setHandlesBuble(!!model.getState().displayBubbles);
     this.view.subscribe("handleMove", this.calculate);
     this.view.subscribe("windowResized", this.updateView);
     this.updateView();
