@@ -1,0 +1,53 @@
+$purple: #6200ee;
+@mixin ball($size) {
+  width: $size;
+  height: $size;
+  border-radius: 50%;
+  background: $purple;
+  color: white;
+  font-family: Lato;
+  font-size: 12px;
+  line-height: $size;
+  text-align: center;
+}
+
+.y-slider__handle {
+  display: flex;
+  position: absolute;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  .y-slider__point {
+    @include ball(12px);
+    cursor: pointer;
+    &-active {
+      box-shadow: 0px 0px 0px 10px transparentize($purple, 0.8);
+    }
+  }
+  .y-slider__bubble {
+    @include ball(30px);
+    display: flex;
+    position: absolute;
+    align-items: flex-end;
+    justify-content: center;
+    width: fit-content;
+    min-width: 30px;
+    padding: 0 2px;
+    transform: scale(0) translateY(0);
+    transition: transform 0.2s ease-in-out;
+    &::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      width: 24px;
+      height: 24px;
+      transform: translateY(1.5px) rotate(45deg);
+      border-radius: 0 9px;
+      background: $purple;
+    }
+    &-active {
+      transform: scale(1) translateY(-35px);
+    }
+  }
+}
