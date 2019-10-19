@@ -38,7 +38,7 @@ export class ErrorBuilder extends Error {
     if (ErrorTypes[type]) {
       return ErrorTypes[type];
     }
-    return;
+    return type;
   }
 
   toString() {
