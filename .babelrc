@@ -1,7 +1,6 @@
 {
-    "presets": ["env"],
+    "presets": ["@babel/preset-env"],
     "plugins": [
-      "array-includes","transform-class-properties", 
-      ["transform-runtime",{"polyfill": true}]
+      "array-includes","@babel/plugin-proposal-class-properties"
     ]
   }
