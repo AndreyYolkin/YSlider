@@ -1,7 +1,7 @@
 import Observable from "../../Observable/Observable";
 import Options from "../../Options";
 import { _createElement } from "../../tools";
-import Handle from "../Handle/Handle";
+import { Handle } from "../Handle/Handle";
 import { Connect } from "../Connect/Connect";
 import "./Slider.scss";
 
@@ -29,8 +29,8 @@ export class Slider extends Observable {
 
   init() {
     this.drawSlider();
-    this.drawHandles(this.handlesList.length);
-    this.drawConnects();
+    this.initHandles(this.handlesList.length);
+    this.initConnects(this.connectsList.length);
   }
 
   drawSlider(orientation = this.orientation) {
@@ -49,7 +49,7 @@ export class Slider extends Observable {
     this.root.appendChild(this.slider);
   }
 
-  drawHandles(count: number) {
+  initHandles(count: number) {
     this.handles.innerHTML = "";
     this.handlesList = [];
     for (let i = 0; i < count; i++) {
@@ -58,16 +58,44 @@ export class Slider extends Observable {
       this.handlesList.push(handle);
       this.handles.appendChild(handle.handle);
     }
-    this.setHandles();
+    this.drawHandles();
+    return this;
   }
 
-  setHandles() {
-    this.handlesList.forEach((handle, index) => {
+  drawHandles() {
+    this.handlesList.forEach(handle => {
       handle.draw();
     });
   }
 
-  drawConnects() {}
+  initConnects(count: number) {
+    this.connects.innerHTML = "";
+    this.connectsList = [];
+    for (let i = 0; i < count; i++) {
+      let connect = new Connect();
+      this.connectsList.push(connect);
+      this.connects.appendChild(connect.connect);
+    }
+    this.drawConnects();
+    return this;
+  }
+
+  drawConnects() {
+    this.connectsList.forEach(connect => {
+      connect.draw();
+    });
+  }
+
+  setConnectsVisibility(visibilityList: Array<boolean>) {
+    this.connectsList.forEach((connect, index) => {
+      if (visibilityList[index]) {
+        connect.setVisible();
+      }
+      else {
+        connect.setInvisible();
+      }
+    });
+  }
 
   onHandleDrag = (event: MouseEvent) => {
     this.emit("handleDrag", event);

@@ -20,6 +20,11 @@ $purple: #6200ee;
       @include flexcenter();
       position: absolute;
       min-width: 100%;
+      height: 2px;
+      border-radius: 1px;
+    }
+    .y-slider__connects {
+      overflow: hidden;
     }
   }
   &__horizontal {
