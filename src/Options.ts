@@ -10,9 +10,9 @@ export interface Options {
 }
 
 export const defaults: Options = {
-  values: [0, 30, 100],
+  values: [10, 30, 80],
   range: [0, 100],
-  connects: false,
+  connects: true,
   step: 1,
   orientation: "horizontal",
   displayBubbles: false,
