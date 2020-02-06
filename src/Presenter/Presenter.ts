@@ -1,102 +1,60 @@
 import Model from "../Model/Model";
-import Slider from "../View/Slider/Slider";
+import { Slider as View } from "../View/Slider/Slider";
 import { _asArray, _range } from "../tools";
+import Options, { defaults } from "../Options";
+import Observable from "../Observable/Observable";
 
-export class Presenter {
+export class Presenter extends Observable {
   model: Model;
-  view: Slider;
-  constructor(model: Model, view: Slider) {
-    this.model = model;
-    this.view = view;
+  views: Array<View> = [];
+  constructor(model: Model, view?: HTMLElement, options?: Options) {
+    super();
+    this.addView = this.addView.bind(this);
     this.updateView = this.updateView.bind(this);
-    let valuesCount = _asArray(model.getState().values).length,
-        connects = model.getState().connects;
-    this.view
-      .initHandles(valuesCount)
-      .initConnects(valuesCount + 1)
-      .setConnectsVisibility(
-        Array.isArray(connects)
-          ? _asArray(connects)
-          : [false, ...Array(valuesCount - 1).fill(connects), false]
-      );
-    this.view.setHandlesBuble(!!model.getState().displayBubbles);
-    this.view.subscribe("handleMove", this.calculate);
-    this.view.subscribe("windowResized", this.updateView);
-    this.updateView();
+    this.updateModel = this.updateModel.bind(this);
+    this.model = model;
+    this.model.subscribe("stateUpdated", this.updateView);
+    if (typeof view !== "undefined") {
+      if (typeof options !== "undefined") {
+        this.addView(view, options);
+      } else {
+        this.addView(view, defaults);
+      }
+    }
   }
 
-  getView() {
-    return { handles: this.view.handlesList };
+  updateModel(values: Array<number>) {
+    this.model.setState({ values: values });
   }
-
-  calculate = () => {
-    let newValues: Array<number> = [];
-    const { width, left } = this.view.slider.getBoundingClientRect();
-    const handles = this.view.handlesList;
-    const { range, step } = this.model.getState();
-    newValues = handles
-      .map(
-        (handle, index) =>
-          (_range(
-            (handle.isActive
-              ? _range(
-                  handle.distance,
-                  handles[index > 0 ? index - 1 : 0].distance,
-                  handles[
-                    index < handles.length - 1 ? index + 1 : handles.length - 1
-                  ].distance
-                )
-              : handle.distance) -
-              left +
-              6,
-            0,
-            width
-          ) /
-            width) *
-            (range[1] - range[0]) +
-          range[0]
-      )
-      .map((num, index, nums) => {
-        if (handles[index].isActive) {
-          if (index > 0 && num < nums[index - 1] + (step ? step : 0)) {
-            num = nums[index - 1] + (step ? step : 0);
-          }
-          if (
-            index < handles.length &&
-            num > nums[index + 1] - (step ? step : 0)
-          ) {
-            num = nums[index + 1] - (step ? step : 0);
-          }
-        }
-        return num;
-      });
-    this.model.setState({ values: newValues });
-    this.updateView();
-    document.body.style.cursor = "pointer";
-  };
 
   updateView() {
-    const { width, left } = this.view.slider.getBoundingClientRect();
-    const handles = this.view.handlesList;
-    const connects = this.view.connectsList;
-    const { values, range } = this.model.getState();
+    this.views.forEach(view => view.update(this.model.getState()));
+    this.views.forEach(view => view.draw());
+  }
 
-    handles.forEach((handle, index) => {
-      handle.position =
-        ((_asArray(values)[index] - range[0]) * width) / (range[1] - range[0]) -
-        6;
-      handle.distance = handle.position + left - 3;
-      handle.value = Array.isArray(values) ? values[index] : values;
-    });
+  addView(root: HTMLElement, options: Options) {
+    let view = new View(root);
+    const {values, range, step} = this.model.getState();
+    view.init({...options, values, range, step});
+    view.draw();
+    view.subscribe("valuesChanged", this.updateModel);
+    view.update(this.model.getState());
+    view.draw();
+    this.views.push(view);
+  }
 
-    const points = [range[0], ..._asArray(values), range[1]];
-    console.log(points);
-    connects.forEach((connect, index) => {
-      connect.flexGrow =
-        (points[index + 1] - points[index]) / (range[1] - range[0]);
-    });
+  removeView(root: HTMLElement) {
+    let view = this.views.filter(view => view.compareRoot(root))[0];
+    view.unsubscribe("valuesChanged");
+    view.destroy();
+    this.views = this.views.filter(view => !view.compareRoot(root));
+  }
 
-    this.view.drawHandles();
-    this.view.drawConnects();
+  get() {
+    console.log(this.model)
+    return _asArray(this.model.values);
+  }
+  set(options: Partial<Options>) {
+    this.model.setState(options);
   }
 }
