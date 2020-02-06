@@ -1,12 +1,13 @@
 import Observable from "../Observable/Observable";
-import { Options, defaults } from "../Options";
+import { ModelOptions } from "../Options";
 import ErrorBuilder from "./Error";
 import { _asArray } from "../tools";
 
-class Model extends Observable {
-  private state!: Options;
 
-  constructor(options: Options) {
+class Model extends Observable {
+  private state!: ModelOptions;
+
+  constructor(options: ModelOptions) {
     super();
     this.validateOptions = this.validateOptions.bind(this);
     this.checkOptionType = this.checkOptionType.bind(this);
@@ -139,7 +140,7 @@ class Model extends Observable {
         }
       });
       const state = keys.reduce(
-        (a: Partial<Options>, i) => (a = { ...a, [i]: _state[i] }),
+        (a: Partial<ModelOptions>, i) => (a = { ...a, [i]: _state[i] }),
         {}
       );
       return { ...state };
@@ -148,7 +149,7 @@ class Model extends Observable {
     }
   }
 
-  setValue(values: Options["values"]) {
+  setValue(values: ModelOptions["values"]) {
     let _state = { ...this.state },
       range = _state.range,
       step = _state.step;
@@ -161,7 +162,7 @@ class Model extends Observable {
     }
   }
 
-  setState(state: Partial<Options>) {
+  setState(state: Partial<ModelOptions>) {
     let newState = this.validateOptions(state);
     if (newState instanceof ErrorBuilder) {
       newState.show();

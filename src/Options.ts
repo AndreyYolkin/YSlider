@@ -1,8 +1,12 @@
-export interface Options {
+export interface ModelOptions {
   values: number | Array<number>;
   range: Array<number>;
-  connects: boolean | Array<boolean>;
   step: number;
+  [key: string]: any;
+}
+
+export interface Options extends ModelOptions{
+  connects: boolean | Array<boolean>;
   orientation: "horizontal" | "vertical";
   displaySteps: boolean;
   displayBubbles: boolean;

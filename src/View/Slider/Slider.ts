@@ -41,7 +41,15 @@ export class Slider extends Observable {
   }
 
   init(options: Options) {
-    const { orientation, values, range, step, displaySteps, displayBubbles, connects } = options;
+    const {
+      orientation,
+      values,
+      range,
+      step,
+      displaySteps,
+      displayBubbles,
+      connects
+    } = options;
     this.initEntities(_asArray(values).length);
     if (displaySteps) {
       this.initSteps(range, step);
@@ -54,13 +62,9 @@ export class Slider extends Observable {
     this.update(options);
   }
 
-  update(
-    options: Pick<Options, "range" | "values" | "displayBubbles" | "connects">
-  ) {
-    const { range, values, displayBubbles, connects } = options;
-    this.updateConnects({ range: range, values: values });
-    //this.setHandlesBubble(displayBubbles);
-    //this.setConnectsVisibility(connects);
+  update(options: Pick<Options, "range" | "values">) {
+    const { range, values } = options;
+    this.updateConnects({ range, values });
     this.updateHandles(values);
   }
 
