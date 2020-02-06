@@ -5,14 +5,9 @@ import { _asArray } from "../tools";
 
 class Model extends Observable {
   private state!: Options;
-  private defaults: Options = {
-    ...defaults
-  };
+
   constructor(options: Options) {
     super();
-
-    options = { ...this.defaults, ...options };
-
     this.validateOptions = this.validateOptions.bind(this);
     this.checkOptionType = this.checkOptionType.bind(this);
     this.setState = this.setState.bind(this);
@@ -21,26 +16,27 @@ class Model extends Observable {
     this.setState(options);
   }
 
+  
   checkOptionType(option: string, value: any) {
     let types: Array<string> = [];
     switch (option) {
       case "values": {
-        types = ["number", "arrayOfNumbers" /*, "string"*/];
+        types = ["number", "arrayOfNumbers"];
         break;
       }
       case "range": {
-        types = [/*"arrayOfStrings",*/ "arrayOfNumbers"];
+        types = ["arrayOfNumbers"];
         break;
       }
-      case "connects": {
+      /*case "connects": {
         types = ["boolean", "arrayOfBooleans"];
         break;
-      }
+      }*/
       case "step": {
         types = ["number"];
         break;
       }
-      case "orientation": {
+      /*case "orientation": {
         types = ["orientation"];
         break;
       }
@@ -48,7 +44,7 @@ class Model extends Observable {
       case "displayBubbles": {
         types = ["boolean"];
         break;
-      }
+      }*/
       default: {
         types = [];
       }
@@ -73,10 +69,10 @@ class Model extends Observable {
       "range",
       "step",
       "values",
-      "connects",
+      /*"connects",
       "orientation",
       "displaySteps",
-      "displayBubbles"
+      "displayBubbles"*/
     ].filter(param => keys.includes(param));
     try {
       order.forEach(key => {
@@ -113,7 +109,7 @@ class Model extends Observable {
             }
             break;
           }
-          case "connects": {
+          /*case "connects": {
             const { values } = _state,
               { connects } = options;
             if (Array.isArray(connects)) {
@@ -139,7 +135,7 @@ class Model extends Observable {
           case "displayBubbles": {
             _state.displayBubbles = options.displayBubbles;
             break;
-          }
+          }*/
         }
       });
       const state = keys.reduce(
@@ -152,7 +148,7 @@ class Model extends Observable {
     }
   }
 
-  setValue(values: number | Array<number> /*| string*/) {
+  setValue(values: Options["values"]) {
     let _state = { ...this.state },
       range = _state.range,
       step = _state.step;
@@ -165,7 +161,7 @@ class Model extends Observable {
     }
   }
 
-  setState(state: Partial<Options>) {                                                                    
+  setState(state: Partial<Options>) {
     let newState = this.validateOptions(state);
     if (newState instanceof ErrorBuilder) {
       newState.show();
@@ -178,6 +174,10 @@ class Model extends Observable {
 
   getState() {
     return { ...this.state };
+  }
+
+  get values() {
+    return this.state.values;
   }
 
   private _isValidType(value: any, ...types: Array<string>) {
@@ -212,20 +212,12 @@ class Model extends Observable {
     return valid.includes(true);
   }
 
-  private _getValidatedRange(range: Array<number> /*| Array<string>*/) {
-    if (range.length === 2 && typeof range[0] === "number") {
+  private _getValidatedRange(range: Array<number>) {
+    if (range.length === 2) {
       let _length = Number(range[1]) - Number(range[0]);
       if (_length < 0) {
         [range[0], range[1]] = [range[1], range[0]];
-        return range;
       }
-      if (_length > 0) {
-        return range;
-      }
-    } else if (
-      (range.length > 2 && typeof range[0] === "number") ||
-      (range.length > 1 && typeof range[0] === "string")
-    ) {
       return range;
     }
     return new ErrorBuilder("range", "positive");
@@ -245,8 +237,8 @@ class Model extends Observable {
   }
 
   private _getValidatedSliderValue(
-    values: number | Array<number> /*| string*/,
-    range: Array<number> /*| Array<string>*/,
+    values: number | Array<number>,
+    range: Array<number>,
     step: number = 1
   ) {
     const _checkRange = (
@@ -272,22 +264,7 @@ class Model extends Observable {
       if (result > range[1]) result = range[1];
       return result;
     };
-    if (
-      (typeof values === "number" && range.length > 2) ||
-      (typeof values === "string" && range.length > 1)
-    ) {
-      let _finded: boolean = false;
-      range.forEach((value: number | string) => {
-        if (values === value) {
-          _finded = true;
-        }
-      });
-      if (_finded) {
-        return values;
-      } else {
-        return range[0];
-      }
-    }
+
     if (typeof values === "number" && range.length === 2) {
       return _checkRange(values, range, step);
     }

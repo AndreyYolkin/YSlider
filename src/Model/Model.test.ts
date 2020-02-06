@@ -1,4 +1,4 @@
-import { Options } from "../Options";
+import { Options, defaults } from "../Options";
 import Model from "./Model";
 import ErrorBuilder from "./Error";
 import { expect, assert } from "chai";
@@ -19,36 +19,31 @@ describe("Errors", () => {
   });
 });
 describe("Model", () => {
-  const options: Options = {
-    values: 10,
-    range: [0, 10]
-  };
+  const options: Options = { ...defaults, values: 10, range: [0, 10] };
   const model = new Model(options);
   model.setState(options);
   it("Check params type", () => {
     expect(model.checkOptionType("values", 10)).to.equal(10);
     expect(model.checkOptionType("values", [0, 10])).to.deep.equal([0, 10]);
-    expect(model.checkOptionType("values", "string")).to.equal("string");
-
+    
     expect(model.checkOptionType("range", [0, 10])).to.deep.equal([0, 10]);
-    expect(model.checkOptionType("range", ["test1", "test2", "test3"])).to.deep.equal(
-      ["test1", "test2", "test3"]
-    );
+
   });
   it("Check wrong params type", () => {
-    expect(model.checkOptionType("values", {})).to.be.an.instanceof(ErrorBuilder);
-    expect(model.checkOptionType("values", 0)).to.deep.equal(0);
-    expect(model.checkOptionType("values", "string")).to.equal("string");
-
-    expect(model.checkOptionType("range", [0, 10])).to.deep.equal([0, 10]);
-    expect(model.checkOptionType("range", ["test1", "test2", "test3"])).to.deep.equal(
-      ["test1", "test2", "test3"]
+    expect(model.checkOptionType("values", {})).to.be.an.instanceof(
+      ErrorBuilder
     );
+    expect(model.checkOptionType("values", 0)).to.deep.equal(0);
+    expect(model.checkOptionType("range", [0, 10])).to.deep.equal([0, 10]);
   });
   it("Validate value", () => {
     expect(model.validateOptions({ values: 5 })).to.deep.equal({ values: 5 });
-    expect(model.validateOptions({ values: [0, 10] })).to.deep.equal({ values: [0, 10] });
-    expect(model.validateOptions({ values: [0, 10], connects: [true, false, true] })).to.deep.equal({ values: [0, 10], connects: [true, false, true] });
-    expect(model.validateOptions({ displaySteps: true })).to.deep.equal({ displaySteps: true });
+    expect(model.validateOptions({ values: [0, 10] })).to.deep.equal({
+      values: [0, 10]
+    });
+    expect(
+      model.validateOptions({ values: [0, 10], connects: [true, false, true] })
+    ).to.deep.equal({ values: [0, 10]});
+    expect(model.validateOptions({ displaySteps: true })).to.deep.equal({});
   });
 });
