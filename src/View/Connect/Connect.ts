@@ -16,8 +16,20 @@ export class Connect extends Observable {
     });
   }
 
+  static getArrayOfVisibiliteies(
+    truthy: boolean | Array<boolean>,
+    count: number
+  ): Array<boolean> {
+    let result: Array<boolean>;
+    if (Array.isArray(truthy)) {
+      result = truthy;
+    } else {
+      result = [false, ...Array(count - 2).fill(truthy), false];
+    }
+    return result;
+  }
+
   draw() {
-     // alert(this.flexGrow);
     this.connect.style.flexGrow = `${this.flexGrow}`;
   }
 
@@ -25,7 +37,7 @@ export class Connect extends Observable {
     this.visible = true;
     this.connect.classList.add("y-slider__connect-visible");
   }
-  
+
   setInvisible() {
     this.visible = false;
     this.connect.classList.remove("y-slider__connect-visible");

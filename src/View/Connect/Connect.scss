@@ -1,7 +1,9 @@
 $purple: #6200ee;
 .y-slider__connect {
+  flex-grow: 1;
   flex-shrink: 1;
   height: 100%;
+  border-radius: 1px;
   &-visible {
     background: $purple;
   }
