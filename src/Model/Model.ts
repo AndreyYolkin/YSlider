@@ -3,7 +3,6 @@ import { ModelOptions } from "../Options";
 import ErrorBuilder from "./Error";
 import { _asArray } from "../tools";
 
-
 class Model extends Observable {
   private state!: ModelOptions;
 
@@ -13,11 +12,9 @@ class Model extends Observable {
     this.checkOptionType = this.checkOptionType.bind(this);
     this.setState = this.setState.bind(this);
     this.setValue = this.setValue.bind(this);
-
     this.setState(options);
   }
 
-  
   checkOptionType(option: string, value: any) {
     let types: Array<string> = [];
     switch (option) {
@@ -34,6 +31,10 @@ class Model extends Observable {
         break;
       }*/
       case "step": {
+        types = ["number"];
+        break;
+      }
+      case "margin": {
         types = ["number"];
         break;
       }
@@ -69,7 +70,8 @@ class Model extends Observable {
     let order = [
       "range",
       "step",
-      "values",
+      "margin",
+      "values"
       /*"connects",
       "orientation",
       "displaySteps",
@@ -96,6 +98,17 @@ class Model extends Observable {
               throw result;
             } else {
               _state.step = result;
+            }
+            break;
+          }
+          case "margin": {
+            const { margin } = options,
+              { step } = _state;
+            let result = this._getValidatedMargin(step, margin);
+            if (result instanceof ErrorBuilder) {
+              throw result;
+            } else {
+              _state.margin = result;
             }
             break;
           }
@@ -237,43 +250,61 @@ class Model extends Observable {
     return new ErrorBuilder("step", "common");
   }
 
+  private _getValidatedMargin(step: number, margin: number) {
+    if (margin < 0) {
+      return new ErrorBuilder("margin", "positive");
+    }
+    if (margin % step !== 0) {
+      return new ErrorBuilder("margin", "divisible");
+    }
+    return margin;
+  }
+
   private _getValidatedSliderValue(
     values: number | Array<number>,
     range: Array<number>,
-    step: number = 1
+    step: number = 1,
+    margin: number = 0
   ) {
     const _checkRange = (
-      value: number,
+      values: number | Array<number>,
       range: Array<any>,
-      step: number = 1
+      step: number = 1,
+      margin: number = 0
     ) => {
-      let relValue = value - range[0];
-      let result: number;
-      if (relValue % step === 0 || relValue === range[1]) {
-        result = value;
-      } else {
-        const _mod = relValue % step;
-        const _delta = Math.min(_mod, step - _mod);
-        if (_delta === _mod) {
-          relValue -= _delta;
-        } else {
-          relValue += _delta;
+      let resultMapped = _asArray(values)
+        .sort((a, b) => a - b)
+        .map(value => {
+          let relValue = value - range[0];
+          let result;
+          if (relValue % step === 0 || relValue === range[1]) {
+            result = value;
+          } else {
+            const _mod = relValue % Math.max(margin, step);
+            const _delta = Math.min(_mod, Math.max(margin, step) - _mod);
+            if (_delta === _mod) {
+              relValue -= _delta;
+            } else {
+              relValue += _delta;
+            }
+            result = relValue;
+          }
+          if (result < range[0]) result = range[0];
+          if (result > range[1]) result = range[1];
+          return result;
+        });
+      resultMapped.forEach((_, i) => {
+        if (resultMapped[i] < resultMapped[i - 1] + margin) {
+          resultMapped[i] = Math.min(resultMapped[i - 1] + margin, range[1]);
         }
-        result = relValue;
-      }
-      if (result < range[0]) result = range[0];
-      if (result > range[1]) result = range[1];
-      return result;
-    };
-
-    if (typeof values === "number" && range.length === 2) {
-      return _checkRange(values, range, step);
-    }
-    if (Array.isArray(values) && range.length === 2) {
-      let _values = values.map(value => {
-        return _checkRange(value, range, step);
       });
-      return _values;
+      return resultMapped;
+    };
+    if (
+      (typeof values === "number" || Array.isArray(values)) &&
+      range.length === 2
+    ) {
+      return _checkRange(values, range, step, margin);
     }
     return new ErrorBuilder("values", "range");
   }

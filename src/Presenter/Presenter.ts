@@ -51,7 +51,6 @@ export class Presenter extends Observable {
   }
 
   get() {
-    console.log(this.model)
     return _asArray(this.model.values);
   }
   set(options: Partial<Options>) {
