@@ -13,6 +13,7 @@ export class Slider extends Observable {
   private handlesList: Array<Handle>;
   private connectsList: Array<Connect>;
   private step!: Options["step"];
+  private margin!: Options["margin"];
   private range!: Options["range"];
   private orientation!: Options["orientation"];
 
@@ -46,24 +47,30 @@ export class Slider extends Observable {
       values,
       range,
       step,
+      margin,
       displaySteps,
       displayBubbles,
       connects
     } = options;
+    this.range = range;
+    this.step = step;
+    this.margin = margin;
+    this.orientation = orientation;
     this.initEntities(_asArray(values).length);
     if (displaySteps) {
       this.initSteps(range, step);
     }
-    this.range = range;
-    this.step = step;
-    this.orientation = orientation;
     this.setHandlesBubble(displayBubbles);
     this.setConnectsVisibility(connects);
     this.update(options);
   }
 
-  update(options: Pick<Options, "range" | "values">) {
-    const { range, values } = options;
+  update(options: Pick<Options, "range" | "values" | "step">) {
+    const { range, values, step } = options;
+    if (this.step !== step) {
+      this.initSteps(range, step);
+      this.step = step;
+    }
     this.updateConnects({ range, values });
     this.updateHandles(values);
   }
@@ -180,15 +187,15 @@ export class Slider extends Observable {
     let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
     let range: Array<number> = [...this.range];
     if (handleIndex > 0) {
-      range[0] = this.handlesList[handleIndex - 1].value + this.step;
+      range[0] = this.handlesList[handleIndex - 1].value + this.margin;
     }
     if (handleIndex < this.handlesList.length - 1) {
-      range[1] = this.handlesList[handleIndex + 1].value - this.step;
+      range[1] = this.handlesList[handleIndex + 1].value - this.margin;
     }
     const { left, top, width, height } = this.slider.getBoundingClientRect();
     let size: number, offset: number, shiftAxis: "x" | "y", clientAxis: number;
     if (this.orientation === "vertical") {
-      shiftAxis = "y";
+      shiftAxis = "y"; 
       clientAxis = event.clientY;
       size = height;
       offset = top;
