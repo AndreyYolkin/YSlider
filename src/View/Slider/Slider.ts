@@ -57,7 +57,9 @@ export class Slider extends Observable {
     this.step = step;
     this.margin = margin;
     this.orientation = orientation;
-    this.order = new Array(_asArray(values).length).fill(0).map((_, i) => i);
+    this.order = new Array(_asArray(values).length)
+      .fill(0)
+      .map((_, i) => i + 1);
     this.initEntities(_asArray(values).length);
     if (displaySteps) {
       this.initSteps(range, step);
@@ -183,12 +185,13 @@ export class Slider extends Observable {
   private changeOrder(handleIndex: number) {
     if (this.order.length > handleIndex && handleIndex >= 0) {
       this.order[handleIndex] = Math.max(...this.order) + 1;
-      if (!this.order.includes(0)) {
+      if (!this.order.includes(1)) {
         this.order = this.order.map(a => --a);
       }
     }
-    this.handlesList.forEach((a, i) => (a.setZIndex(this.order[i])));
+    this.handlesList.forEach((a, i) => a.setZIndex(this.order[i]));
   }
+  
   private onHandleDrag(event: MouseEvent) {
     let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
     this.changeOrder(handleIndex);
