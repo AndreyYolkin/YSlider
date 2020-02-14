@@ -16,6 +16,7 @@ export class Slider extends Observable {
   private margin!: Options["margin"];
   private range!: Options["range"];
   private orientation!: Options["orientation"];
+  private order!: Array<number>;
 
   constructor(root: HTMLElement) {
     super();
@@ -56,6 +57,7 @@ export class Slider extends Observable {
     this.step = step;
     this.margin = margin;
     this.orientation = orientation;
+    this.order = new Array(_asArray(values).length).fill(0).map((_, i) => i);
     this.initEntities(_asArray(values).length);
     if (displaySteps) {
       this.initSteps(range, step);
@@ -178,12 +180,25 @@ export class Slider extends Observable {
     return this;
   }
 
+  private changeOrder(handleIndex: number) {
+    if (this.order.length > handleIndex && handleIndex >= 0) {
+      this.order[handleIndex] = Math.max(...this.order) + 1;
+      if (!this.order.includes(0)) {
+        this.order = this.order.map(a => --a);
+      }
+    }
+    this.handlesList.forEach((a, i) => (a.setZIndex(this.order[i])));
+  }
   private onHandleDrag(event: MouseEvent) {
+    let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
+    this.changeOrder(handleIndex);
     document.addEventListener("mouseup", this.onMouseUp);
     document.addEventListener("mousemove", this.onMouseMove);
+    document.addEventListener("touchend", this.onMouseUp);
+    document.addEventListener("touchmove", this.onMouseMove);
   }
 
-  private onMouseMove(event: MouseEvent) {
+  private onMouseMove(event: MouseEvent | TouchEvent) {
     let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
     let range: Array<number> = [...this.range];
     if (handleIndex > 0) {
@@ -195,15 +210,27 @@ export class Slider extends Observable {
     const { left, top, width, height } = this.slider.getBoundingClientRect();
     let size: number, offset: number, shiftAxis: "x" | "y", clientAxis: number;
     if (this.orientation === "vertical") {
-      shiftAxis = "y"; 
-      clientAxis = event.clientY;
+      clientAxis = 0;
+      shiftAxis = "y";
       size = height;
       offset = top;
+      if (event instanceof MouseEvent) {
+        clientAxis = event.clientY;
+      }
+      if (event instanceof TouchEvent) {
+        clientAxis = event.touches[0].clientY;
+      }
     } else {
+      clientAxis = 0;
       shiftAxis = "x";
-      clientAxis = event.clientX;
       size = width;
       offset = left;
+      if (event instanceof MouseEvent) {
+        clientAxis = event.clientX;
+      }
+      if (event instanceof TouchEvent) {
+        clientAxis = event.touches[0].clientX;
+      }
     }
     let value = _range(
       ((clientAxis - this.handlesList[handleIndex].shift[shiftAxis] - offset) /
@@ -217,9 +244,11 @@ export class Slider extends Observable {
     this.emit("valuesChanged", values);
   }
 
-  private onMouseUp = (event: MouseEvent) => {
+  private onMouseUp = (event: MouseEvent | TouchEvent) => {
     document.removeEventListener("mouseup", this.onMouseUp);
     document.removeEventListener("mousemove", this.onMouseMove);
+    document.removeEventListener("touchend", this.onMouseUp);
+    document.removeEventListener("touchmove", this.onMouseMove);
     this.handlesList.forEach(handle => handle.setInactive());
   };
 
