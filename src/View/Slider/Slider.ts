@@ -130,17 +130,20 @@ export class Slider extends Observable {
 
   private initSteps(range: Options["range"], step: Options["step"]) {
     this.steps.innerHTML = "";
+    let clipping = _createElement("div", { class: "y-slider__steps_clipping" });
     for (let i = 0; i < range[1] - range[0] + step; i += step) {
       let HTMLstep = _createElement("div", { class: "y-slider__step" });
-      HTMLstep.style.marginRight = HTMLstep.style.marginBottom = `${Math.min(
-        1,
-        Math.min(
-          (range[1] - range[0] - i) / (range[1] - range[0]),
-          step / (range[1] - range[0])
-        )
-      ) * 100}%`;
-      this.steps.appendChild(HTMLstep);
+      clipping.appendChild(HTMLstep);
     }
+    clipping.style.width = clipping.style.height = `${step *
+      Math.ceil((range[1] - range[0]) / step)}%`;
+    this.steps.appendChild(
+      _createElement("div", { class: "y-slider__step y-slider__step-edge" })
+    );
+    this.steps.appendChild(clipping);
+    this.steps.appendChild(
+      _createElement("div", { class: "y-slider__step y-slider__step-edge" })
+    );
     this.entities.appendChild(this.steps);
   }
 
@@ -191,7 +194,7 @@ export class Slider extends Observable {
     }
     this.handlesList.forEach((a, i) => a.setZIndex(this.order[i]));
   }
-  
+
   private onHandleDrag(event: MouseEvent) {
     let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
     this.changeOrder(handleIndex);

@@ -12,6 +12,7 @@ $purple: #6200ee;
   .y-slider__base {
     display: flex;
     position: relative;
+    border-radius: 1px;
     background: transparentize($purple, 0.76);
     .y-slider__entities {
       display: flex;
@@ -21,13 +22,18 @@ $purple: #6200ee;
         z-index: 1;
       }
       .y-slider__steps {
-        display: flex;
         position: absolute;
         width: 100%;
         height: 100%;
+        overflow: hidden;
         border-radius: 1px;
         pointer-events: none;
         user-select: none;
+        .y-slider__steps_clipping {
+          display: flex;
+          justify-content: space-between;
+          border-radius: 1px;
+        }
         .y-slider__step {
           display: flex;
           position: relative;
@@ -42,6 +48,12 @@ $purple: #6200ee;
             border-radius: 1px;
             background: transparentize($color: white, $amount: 0.1);
           }
+          &-edge {
+            position: absolute;
+            &::after {
+              background: white;
+            }
+          }
         }
       }
     }
@@ -54,14 +66,25 @@ $purple: #6200ee;
       align-items: center;
       width: 100%;
       height: 2px;
+      min-height: 2px;
     }
     .y-slider__entities {
       flex-direction: row;
       align-items: center;
       min-width: 100%;
       height: 2px;
-      .y-slider__step {
-        margin-bottom: 0px !important;
+      .y-slider__steps_clipping {
+        flex-direction: row;
+        height: 100% !important;
+      }
+      .y-slider__step-edge {
+        top: 50%;
+        &:first-child {
+          left: 1px;
+        }
+        &:last-child {
+          right: 1px;
+        }
       }
     }
   }
@@ -72,6 +95,7 @@ $purple: #6200ee;
     .y-slider__base {
       justify-content: center;
       width: 2px;
+      min-width: 2px;
       height: 100%;
     }
     .y-slider__entities {
@@ -79,8 +103,18 @@ $purple: #6200ee;
       justify-content: center;
       width: 2px;
       min-height: 100%;
-      .y-slider__step {
-        margin-right: 0px !important;
+      .y-slider__steps_clipping {
+        flex-direction: column;
+        width: 100% !important;
+      }
+      .y-slider__step-edge {
+        right: 50%;
+        &:first-child {
+          top: 1px;
+        }
+        &:last-child {
+          bottom: 1px;
+        }
       }
     }
   }
