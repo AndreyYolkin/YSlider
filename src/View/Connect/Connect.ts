@@ -47,7 +47,7 @@ export class Connect extends Observable {
         top: false
       };
     }
-    this.emit("connectClicked")
+    this.emit("connectClicked", event)
   }
 
   static getArrayOfVisibiliteies(
