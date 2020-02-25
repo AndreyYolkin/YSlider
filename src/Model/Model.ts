@@ -114,8 +114,13 @@ class Model extends Observable {
           }
           case "values": {
             const { values } = options,
-              { range, step , margin} = _state;
-            let result = this._getValidatedSliderValue(values, range, step, margin);
+              { range, step, margin } = _state;
+            let result = this._getValidatedSliderValue(
+              values,
+              range,
+              step,
+              margin
+            );
             if (result instanceof ErrorBuilder) {
               throw result;
             } else {
@@ -280,7 +285,7 @@ class Model extends Observable {
           if (relValue % step === 0 || relValue === range[1]) {
             result = value;
           } else {
-            const _mod = relValue % Math.max(margin, step);
+            const _mod = relValue % step;
             const _delta = Math.min(_mod, Math.max(margin, step) - _mod);
             if (_delta === _mod) {
               relValue -= _delta;
