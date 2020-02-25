@@ -18,6 +18,8 @@ export class Slider extends Observable {
   private orientation!: Options["orientation"];
   private order!: Array<number>;
 
+  private move: boolean = false;
+
   constructor(root: HTMLElement) {
     super();
     this.root = root;
@@ -201,35 +203,39 @@ export class Slider extends Observable {
   }
 
   private onConnectClicked(event: Event) {
-    let connectIndex: number = this.connectsList.findIndex(
-      a => !a.clickArea.none
-    );
-    let handleIndex: number = 0;
-    if (connectIndex >= 0) {
-      const connect = this.connectsList[connectIndex];
-      if (connectIndex == 0) {
-        handleIndex = 0;
-      } else if (connectIndex == this.connectsList.length - 1) {
-        handleIndex = this.handlesList.length - 1;
-      } else {
-        if (this.orientation == "horizontal") {
-          if (connect.clickArea.left) {
-            handleIndex = connectIndex - 1;
-          } else {
-            handleIndex = connectIndex;
+    if (!this.move) {
+      this.move = true; 
+      let connectIndex: number = this.connectsList.findIndex(
+        a => !a.clickArea.none
+      );
+      let handleIndex: number = 0;
+      if (connectIndex >= 0) {
+        const connect = this.connectsList[connectIndex];
+        if (connectIndex == 0) {
+          handleIndex = 0;
+        } else if (connectIndex == this.connectsList.length - 1) {
+          handleIndex = this.handlesList.length - 1;
+        } else {
+          if (this.orientation == "horizontal") {
+            if (connect.clickArea.left) {
+              handleIndex = connectIndex - 1;
+            } else {
+              handleIndex = connectIndex;
+            }
+          }
+          if (this.orientation == "vertical") {
+            if (connect.clickArea.top) {
+              handleIndex = connectIndex - 1;
+            } else {
+              handleIndex = connectIndex;
+            }
           }
         }
-        if (this.orientation == "vertical") {
-          if (connect.clickArea.top) {
-            handleIndex = connectIndex - 1;
-          } else {
-            handleIndex = connectIndex;
-          }
-        }
+        let values = this.calculate(event, handleIndex);
+        this.connectsList.forEach(a => (a.clickArea.none = true));
+        this.emit("valuesChanged", values);
       }
-      let values = this.calculate(event, handleIndex);
-      this.connectsList.forEach(a => (a.clickArea.none = true));
-      this.emit("valuesChanged", values);
+      this.move = false; 
     }
   }
 
@@ -279,12 +285,15 @@ export class Slider extends Observable {
   }
 
   private onHandleDrag() {
-    let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
-    this.changeOrder(handleIndex);
-    document.addEventListener("mouseup", this.onMouseUp);
-    document.addEventListener("mousemove", this.onMouseMove);
-    document.addEventListener("touchend", this.onMouseUp);
-    document.addEventListener("touchmove", this.onMouseMove);
+    if (!this.move) {
+      this.move = true; 
+      let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
+      this.changeOrder(handleIndex);
+      document.addEventListener("mouseup", this.onMouseUp);
+      document.addEventListener("mousemove", this.onMouseMove);
+      document.addEventListener("touchend", this.onMouseUp);
+      document.addEventListener("touchmove", this.onMouseMove);
+    }
   }
 
   private onMouseMove(event: MouseEvent | TouchEvent) {
@@ -299,6 +308,7 @@ export class Slider extends Observable {
     document.removeEventListener("touchend", this.onMouseUp);
     document.removeEventListener("touchmove", this.onMouseMove);
     this.handlesList.forEach(handle => handle.setInactive());
+    this.move = false; 
   };
 
   compareRoot(root: HTMLElement) {
