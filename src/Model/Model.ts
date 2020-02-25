@@ -114,8 +114,8 @@ class Model extends Observable {
           }
           case "values": {
             const { values } = options,
-              { range, step } = _state;
-            let result = this._getValidatedSliderValue(values, range, step);
+              { range, step , margin} = _state;
+            let result = this._getValidatedSliderValue(values, range, step, margin);
             if (result instanceof ErrorBuilder) {
               throw result;
             } else {
@@ -269,8 +269,8 @@ class Model extends Observable {
     const _checkRange = (
       values: number | Array<number>,
       range: Array<any>,
-      step: number = 1,
-      margin: number = 0
+      step: number,
+      margin: number
     ) => {
       let resultMapped = _asArray(values)
         .sort((a, b) => a - b)
@@ -294,7 +294,7 @@ class Model extends Observable {
           return result;
         });
       resultMapped.forEach((_, i) => {
-        if (resultMapped[i] < resultMapped[i - 1] + margin) {
+        if (resultMapped[i] <= resultMapped[i - 1] + margin) {
           resultMapped[i] = Math.min(resultMapped[i - 1] + margin, range[1]);
         }
       });
