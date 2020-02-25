@@ -88,6 +88,9 @@ $purple: #6200ee;
         }
       }
     }
+    .y-slider__connect::after {
+      padding: 5px 0;
+    }
   }
   &-vertical {
     justify-content: center;
@@ -117,6 +120,9 @@ $purple: #6200ee;
           bottom: 1px;
         }
       }
+    }
+    .y-slider__connect::after {
+      padding: 0 5px;
     }
   }
 }
