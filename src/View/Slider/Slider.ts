@@ -16,6 +16,9 @@ export class Slider extends Observable {
   private margin!: Options["margin"];
   private range!: Options["range"];
   private orientation!: Options["orientation"];
+  private order!: Array<number>;
+
+  private move: boolean = false;
 
   constructor(root: HTMLElement) {
     super();
@@ -56,6 +59,11 @@ export class Slider extends Observable {
     this.step = step;
     this.margin = margin;
     this.orientation = orientation;
+    this.onHandleDrag = this.onHandleDrag.bind(this);
+    this.onConnectClicked = this.onConnectClicked.bind(this);
+    this.order = new Array(_asArray(values).length)
+      .fill(0)
+      .map((_, i) => i + 1);
     this.initEntities(_asArray(values).length);
     if (displaySteps) {
       this.initSteps(range, step);
@@ -112,6 +120,9 @@ export class Slider extends Observable {
     this.handlesList = [];
     for (let i = 0; i <= count; i++) {
       let connect = new Connect();
+      connect.subscribe("connectClicked", (e: Event) =>
+        this.onConnectClicked(e)
+      );
       this.connectsList.push(connect);
       this.entities.appendChild(connect.connect);
       if (i < count) {
@@ -126,17 +137,20 @@ export class Slider extends Observable {
 
   private initSteps(range: Options["range"], step: Options["step"]) {
     this.steps.innerHTML = "";
+    let clipping = _createElement("div", { class: "y-slider__steps_clipping" });
     for (let i = 0; i < range[1] - range[0] + step; i += step) {
       let HTMLstep = _createElement("div", { class: "y-slider__step" });
-      HTMLstep.style.marginRight = HTMLstep.style.marginBottom = `${Math.min(
-        1,
-        Math.min(
-          (range[1] - range[0] - i) / (range[1] - range[0]),
-          step / (range[1] - range[0])
-        )
-      ) * 100}%`;
-      this.steps.appendChild(HTMLstep);
+      clipping.appendChild(HTMLstep);
     }
+    clipping.style.width = clipping.style.height = `${step *
+      Math.ceil((range[1] - range[0]) / step)}%`;
+    this.steps.appendChild(
+      _createElement("div", { class: "y-slider__step y-slider__step-edge" })
+    );
+    this.steps.appendChild(clipping);
+    this.steps.appendChild(
+      _createElement("div", { class: "y-slider__step y-slider__step-edge" })
+    );
     this.entities.appendChild(this.steps);
   }
 
@@ -178,13 +192,54 @@ export class Slider extends Observable {
     return this;
   }
 
-  private onHandleDrag(event: MouseEvent) {
-    document.addEventListener("mouseup", this.onMouseUp);
-    document.addEventListener("mousemove", this.onMouseMove);
+  private changeOrder(handleIndex: number) {
+    if (this.order.length > handleIndex && handleIndex >= 0) {
+      this.order[handleIndex] = Math.max(...this.order) + 1;
+      if (!this.order.includes(1)) {
+        this.order = this.order.map(a => --a);
+      }
+    }
+    this.handlesList.forEach((a, i) => a.setZIndex(this.order[i]));
   }
 
-  private onMouseMove(event: MouseEvent) {
-    let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
+  private onConnectClicked(event: Event) {
+    if (!this.move) {
+      this.move = true; 
+      let connectIndex: number = this.connectsList.findIndex(
+        a => !a.clickArea.none
+      );
+      let handleIndex: number = 0;
+      if (connectIndex >= 0) {
+        const connect = this.connectsList[connectIndex];
+        if (connectIndex == 0) {
+          handleIndex = 0;
+        } else if (connectIndex == this.connectsList.length - 1) {
+          handleIndex = this.handlesList.length - 1;
+        } else {
+          if (this.orientation == "horizontal") {
+            if (connect.clickArea.left) {
+              handleIndex = connectIndex - 1;
+            } else {
+              handleIndex = connectIndex;
+            }
+          }
+          if (this.orientation == "vertical") {
+            if (connect.clickArea.top) {
+              handleIndex = connectIndex - 1;
+            } else {
+              handleIndex = connectIndex;
+            }
+          }
+        }
+        let values = this.calculate(event, handleIndex);
+        this.connectsList.forEach(a => (a.clickArea.none = true));
+        this.emit("valuesChanged", values);
+      }
+      this.move = false; 
+    }
+  }
+
+  private calculate(event: Event, handleIndex: number) {
     let range: Array<number> = [...this.range];
     if (handleIndex > 0) {
       range[0] = this.handlesList[handleIndex - 1].value + this.margin;
@@ -195,15 +250,27 @@ export class Slider extends Observable {
     const { left, top, width, height } = this.slider.getBoundingClientRect();
     let size: number, offset: number, shiftAxis: "x" | "y", clientAxis: number;
     if (this.orientation === "vertical") {
-      shiftAxis = "y"; 
-      clientAxis = event.clientY;
+      clientAxis = 0;
+      shiftAxis = "y";
       size = height;
       offset = top;
+      if (event instanceof MouseEvent) {
+        clientAxis = event.clientY;
+      }
+      if (event instanceof TouchEvent) {
+        clientAxis = event.touches[0].clientY;
+      }
     } else {
+      clientAxis = 0;
       shiftAxis = "x";
-      clientAxis = event.clientX;
       size = width;
       offset = left;
+      if (event instanceof MouseEvent) {
+        clientAxis = event.clientX;
+      }
+      if (event instanceof TouchEvent) {
+        clientAxis = event.touches[0].clientX;
+      }
     }
     let value = _range(
       ((clientAxis - this.handlesList[handleIndex].shift[shiftAxis] - offset) /
@@ -214,13 +281,34 @@ export class Slider extends Observable {
     );
     let values = this.handlesList.map(handle => handle.value);
     values[handleIndex] = value;
+    return values;
+  }
+
+  private onHandleDrag() {
+    if (!this.move) {
+      this.move = true; 
+      let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
+      this.changeOrder(handleIndex);
+      document.addEventListener("mouseup", this.onMouseUp);
+      document.addEventListener("mousemove", this.onMouseMove);
+      document.addEventListener("touchend", this.onMouseUp);
+      document.addEventListener("touchmove", this.onMouseMove);
+    }
+  }
+
+  private onMouseMove(event: MouseEvent | TouchEvent) {
+    let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
+    let values = this.calculate(event, handleIndex);
     this.emit("valuesChanged", values);
   }
 
-  private onMouseUp = (event: MouseEvent) => {
+  private onMouseUp = (event: MouseEvent | TouchEvent) => {
     document.removeEventListener("mouseup", this.onMouseUp);
     document.removeEventListener("mousemove", this.onMouseMove);
+    document.removeEventListener("touchend", this.onMouseUp);
+    document.removeEventListener("touchmove", this.onMouseMove);
     this.handlesList.forEach(handle => handle.setInactive());
+    this.move = false; 
   };
 
   compareRoot(root: HTMLElement) {

@@ -26,6 +26,7 @@ export class Handle extends Observable {
 
     this.onHandleDrag = this.onHandleDrag.bind(this);
     this.handle.addEventListener("mousedown", this.onHandleDrag);
+    this.handle.addEventListener("touchstart", this.onHandleDrag);
     this.active = false;
   }
 
@@ -34,13 +35,21 @@ export class Handle extends Observable {
       this.value !== undefined ? this.value.toString() : "";
   }
 
-  onHandleDrag (event: MouseEvent) {
-    this.shift.x = event.clientX - this.handle.getBoundingClientRect().left;
-    this.shift.y = event.clientY - this.handle.getBoundingClientRect().top;
+  onHandleDrag(event: MouseEvent | TouchEvent) {
+    if (event instanceof MouseEvent) {
+      this.shift.x = event.clientX - this.handle.getBoundingClientRect().left;
+      this.shift.y = event.clientY - this.handle.getBoundingClientRect().top;
+    }
+    if (event instanceof TouchEvent) {
+      this.shift.x =
+        event.touches[0].clientX - this.handle.getBoundingClientRect().left;
+      this.shift.y =
+        event.touches[0].clientY - this.handle.getBoundingClientRect().top;
+    }
     event.preventDefault();
-    this.emit("handleDrag", event);
     this.setActive();
-  };
+    this.emit("handleDrag", event);
+  }
 
   get isActive() {
     return this.active;
@@ -54,6 +63,10 @@ export class Handle extends Observable {
     }
   }
 
+  setZIndex(index: number) {
+    this.handle.style.zIndex = index.toString();
+  }
+  
   setInactive() {
     this.active = false;
     this.point.classList.remove("y-slider__point-active");

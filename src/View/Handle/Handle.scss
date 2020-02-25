@@ -37,6 +37,7 @@ $purple: #6200ee;
     padding: 0 2px;
     transform: scale(0) translateY(0);
     transition: transform 0.2s ease-in-out;
+    pointer-events: none;
     &::before {
       content: "";
       position: absolute;
