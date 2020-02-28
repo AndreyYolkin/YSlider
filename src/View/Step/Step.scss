@@ -1,0 +1,28 @@
+.y-slider__step {
+  display: flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  &::after {
+    content: "";
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 1px;
+  }
+  &-edge {
+    position: absolute;
+    &::after {
+      content: "";
+    }
+  }
+  &-visible {
+    &::after {
+      background: transparentize($color: white, $amount: 0.1);
+    }
+    &.y-slider__step-edge::after {
+      background: white;
+    }
+  }
+}
