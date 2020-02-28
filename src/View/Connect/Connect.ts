@@ -50,19 +50,6 @@ export class Connect extends Observable {
     this.emit("connectClicked", event)
   }
 
-  static getArrayOfVisibiliteies(
-    truthy: boolean | Array<boolean>,
-    count: number
-  ): Array<boolean> {
-    let result: Array<boolean>;
-    if (Array.isArray(truthy)) {
-      result = truthy;
-    } else {
-      result = [false, ...Array(count - 2).fill(truthy), false];
-    }
-    return result;
-  }
-
   draw() {
     this.connect.style.flexGrow = `${this.flexGrow}`;
   }
