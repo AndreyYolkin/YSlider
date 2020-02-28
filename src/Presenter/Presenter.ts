@@ -51,9 +51,11 @@ export class Presenter extends Observable {
   }
 
   get() {
-    return _asArray(this.model.values);
+    return {values: _asArray(this.model.values), params: {...this.model.getState(), ...this.views[0].getStyles()}};
   }
+
   set(options: Partial<Options>) {
     this.model.setState(options);
+    this.views.map(a => a.applyStyles(options))
   }
 }
