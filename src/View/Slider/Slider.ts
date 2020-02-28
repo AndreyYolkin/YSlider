@@ -1,8 +1,16 @@
 import Observable from "../../Observable/Observable";
-import Options from "../../Options";
-import { _createElement, _asArray, _range } from "../../tools";
+import { Options, defaults } from "../../Options";
+import ErrorBuilder from "../../Error";
+import {
+  _createElement,
+  _asArray,
+  _range,
+  _isValidType,
+  _getBooleanArray
+} from "../../tools";
 import { Handle } from "../Handle/Handle";
 import { Connect } from "../Connect/Connect";
+import { Step } from "../Step/Step";
 import "./Slider.scss";
 
 export class Slider extends Observable {
@@ -10,12 +18,19 @@ export class Slider extends Observable {
   private slider!: HTMLElement;
   private entities!: HTMLElement;
   private steps!: HTMLElement;
+
   private handlesList: Array<Handle>;
   private connectsList: Array<Connect>;
+  private stepsList: Array<Step>;
+
   private step!: Options["step"];
   private margin!: Options["margin"];
   private range!: Options["range"];
   private orientation!: Options["orientation"];
+  private displaySteps!: Options["displaySteps"];
+  private displayBubbles!: Options["displayBubbles"];
+  private connects!: Options["connects"];
+
   private order!: Array<number>;
 
   private move: boolean = false;
@@ -25,10 +40,38 @@ export class Slider extends Observable {
     this.root = root;
     this.handlesList = [];
     this.connectsList = [];
+    this.stepsList = [];
     this.initEntities = this.initEntities.bind(this);
-    this.onHandleDrag = this.onHandleDrag.bind(this);
+    this.onHandleDraged = this.onHandleDraged.bind(this);
+    this.onConnectClicked = this.onConnectClicked.bind(this);
     this.onMouseMove = this.onMouseMove.bind(this);
     this.prepare();
+  }
+
+  private checkOptionType(option: string, value: any) {
+    let types: Array<string> = [];
+    switch (option) {
+      case "connects": {
+        types = ["boolean", "arrayOfBooleans"];
+        break;
+      }
+      case "orientation": {
+        types = ["orientation"];
+        break;
+      }
+      case "displaySteps":
+      case "displayBubbles": {
+        types = ["boolean"];
+        break;
+      }
+      default: {
+        types = [];
+      }
+    }
+    if (_isValidType(value, ...types)) {
+      return value;
+    }
+    return new ErrorBuilder(option, ...types);
   }
 
   private prepare() {
@@ -45,32 +88,71 @@ export class Slider extends Observable {
   }
 
   init(options: Options) {
-    const {
-      orientation,
-      values,
-      range,
-      step,
-      margin,
-      displaySteps,
-      displayBubbles,
-      connects
-    } = options;
+    const { values, range, step, margin } = options;
     this.range = range;
     this.step = step;
     this.margin = margin;
-    this.orientation = orientation;
-    this.onHandleDrag = this.onHandleDrag.bind(this);
-    this.onConnectClicked = this.onConnectClicked.bind(this);
-    this.order = new Array(_asArray(values).length)
-      .fill(0)
-      .map((_, i) => i + 1);
+
+    this.initOrder(values);
     this.initEntities(_asArray(values).length);
-    if (displaySteps) {
-      this.initSteps(range, step);
-    }
-    this.setHandlesBubble(displayBubbles);
-    this.setConnectsVisibility(connects);
+    this.initSteps(range, step);
+    this.applyStyles(options);
+
     this.update(options);
+  }
+
+  applyStyles(options: Partial<Options>) {
+    if (typeof this.orientation === "undefined") {
+      this.orientation = defaults.orientation;
+    }
+    if (typeof this.displaySteps === "undefined") {
+      this.displaySteps = defaults.displaySteps;
+    }
+    if (typeof this.displayBubbles === "undefined") {
+      this.displayBubbles = defaults.displayBubbles;
+    }
+    if (typeof this.connects === "undefined") {
+      this.connects = defaults.connects;
+    }
+
+    let { orientation, displayBubbles, displaySteps, connects } = options;
+    let keys: Array<string> = Object.keys(options);
+
+    keys
+      .filter(
+        (key: string) =>
+          !(this.checkOptionType(key, options[key]) instanceof ErrorBuilder)
+      )
+      .map(a => {
+        switch (a) {
+          case "displaySteps":
+            if (typeof displaySteps !== "undefined") {
+              this.displaySteps = displaySteps;
+            }
+          case "displayBubbles":
+            if (typeof displayBubbles !== "undefined") {
+              this.displayBubbles = displayBubbles;
+            }
+            break;
+          case "orientation":
+            if (typeof orientation !== "undefined") {
+              this.orientation = orientation;
+            }
+            break;
+          case "connects":
+            if (typeof connects !== "undefined") {
+              this.connects = connects;
+            }
+            break;
+          default:
+            break;
+        }
+      });
+
+    this.setStepsVisibility();
+    this.setHandlesBubbleVisibility();
+    this.setConnectsVisibility();
+    this.setSliderOrientation();
   }
 
   update(options: Pick<Options, "range" | "values" | "step">) {
@@ -84,7 +166,6 @@ export class Slider extends Observable {
   }
 
   draw() {
-    this.drawSlider();
     this.drawHandles();
     this.drawConnects();
   }
@@ -95,7 +176,7 @@ export class Slider extends Observable {
     this.slider.remove();
   }
 
-  private drawSlider() {
+  private setSliderOrientation() {
     this.slider.className = `y-slider y-slider-${this.orientation}`;
     return this;
   }
@@ -107,9 +188,9 @@ export class Slider extends Observable {
     return this;
   }
 
-  private setHandlesBubble(state: boolean) {
-    this.handlesList.forEach(handle => {
-      handle.displayBubble = state;
+  private drawConnects() {
+    this.connectsList.forEach(connect => {
+      connect.draw();
     });
     return this;
   }
@@ -127,31 +208,46 @@ export class Slider extends Observable {
       this.entities.appendChild(connect.connect);
       if (i < count) {
         let handle = new Handle();
-        handle.subscribe("handleDrag", this.onHandleDrag);
+        handle.subscribe("handleDrag", this.onHandleDraged);
         this.handlesList.push(handle);
         this.entities.appendChild(handle.handle);
       }
     }
+    this.setHandlesBubbleVisibility();
+    return this;
+  }
+
+  private initOrder(values: Options["values"]) {
+    this.order = new Array(_asArray(values).length)
+      .fill(0)
+      .map((_, i) => i + 1);
     return this;
   }
 
   private initSteps(range: Options["range"], step: Options["step"]) {
     this.steps.innerHTML = "";
+    this.stepsList = [];
+
     let clipping = _createElement("div", { class: "y-slider__steps_clipping" });
-    for (let i = 0; i < range[1] - range[0] + step; i += step) {
-      let HTMLstep = _createElement("div", { class: "y-slider__step" });
-      clipping.appendChild(HTMLstep);
-    }
     clipping.style.width = clipping.style.height = `${step *
       Math.ceil((range[1] - range[0]) / step)}%`;
-    this.steps.appendChild(
-      _createElement("div", { class: "y-slider__step y-slider__step-edge" })
-    );
+    for (let i = 0; i < range[1] - range[0] + step; i += step) {
+      let step = new Step();
+      this.stepsList.push(step);
+      clipping.appendChild(step.step);
+    }
+
+    let edgesteps = [new Step(true), new Step(true)];
+    this.stepsList.push(...edgesteps);
+    this.steps.appendChild(edgesteps[0].step);
     this.steps.appendChild(clipping);
-    this.steps.appendChild(
-      _createElement("div", { class: "y-slider__step y-slider__step-edge" })
-    );
+    this.steps.appendChild(edgesteps[1].step);
+
     this.entities.appendChild(this.steps);
+
+    this.setStepsVisibility();
+
+    return this;
   }
 
   private updateConnects(options: Pick<Options, "range" | "values">) {
@@ -170,16 +266,18 @@ export class Slider extends Observable {
     });
   }
 
-  private drawConnects() {
-    this.connectsList.forEach(connect => {
-      connect.draw();
-    });
-    return this;
-  }
-
-  private setConnectsVisibility(connects: Options["connects"]) {
-    let booleanConnects = Connect.getArrayOfVisibiliteies(
-      connects,
+  private setConnectsVisibility() {
+    if (Array.isArray(this.connects)) {
+      if (this.connectsList.length != this.connects.length) {
+        throw new ErrorBuilder(
+          "connects",
+          "boolean",
+          "be an array and match handle count"
+        );
+      }
+    }
+    let booleanConnects = _getBooleanArray(
+      this.connects,
       this.connectsList.length
     );
     this.connectsList.forEach((connect, index) => {
@@ -188,6 +286,20 @@ export class Slider extends Observable {
       } else {
         connect.setInvisible();
       }
+    });
+    this.connects = [...booleanConnects];
+    return this;
+  }
+
+  private setStepsVisibility() {
+    this.stepsList.forEach(step => {
+      this.displaySteps ? step.setVisible() : step.setInvisible();
+    });
+  }
+
+  private setHandlesBubbleVisibility() {
+    this.handlesList.forEach(handle => {
+      handle.displayBubbles = this.displayBubbles;
     });
     return this;
   }
@@ -204,7 +316,7 @@ export class Slider extends Observable {
 
   private onConnectClicked(event: Event) {
     if (!this.move) {
-      this.move = true; 
+      this.move = true;
       let connectIndex: number = this.connectsList.findIndex(
         a => !a.clickArea.none
       );
@@ -235,7 +347,7 @@ export class Slider extends Observable {
         this.connectsList.forEach(a => (a.clickArea.none = true));
         this.emit("valuesChanged", values);
       }
-      this.move = false; 
+      this.move = false;
     }
   }
 
@@ -284,9 +396,9 @@ export class Slider extends Observable {
     return values;
   }
 
-  private onHandleDrag() {
+  private onHandleDraged() {
     if (!this.move) {
-      this.move = true; 
+      this.move = true;
       let handleIndex: number = this.handlesList.findIndex(a => a.isActive);
       this.changeOrder(handleIndex);
       document.addEventListener("mouseup", this.onMouseUp);
@@ -308,11 +420,16 @@ export class Slider extends Observable {
     document.removeEventListener("touchend", this.onMouseUp);
     document.removeEventListener("touchmove", this.onMouseMove);
     this.handlesList.forEach(handle => handle.setInactive());
-    this.move = false; 
+    this.move = false;
   };
 
   compareRoot(root: HTMLElement) {
     return root === this.root;
+  }
+
+  getStyles() {
+    let { displayBubbles, displaySteps, orientation, connects } = this;
+    return { displayBubbles, displaySteps, orientation, connects };
   }
 }
 

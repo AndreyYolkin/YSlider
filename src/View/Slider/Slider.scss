@@ -35,27 +35,6 @@ $purple: #6200ee;
           justify-content: space-between;
           border-radius: 1px;
         }
-        .y-slider__step {
-          display: flex;
-          position: relative;
-          align-items: center;
-          justify-content: center;
-          user-select: none;
-          &::after {
-            content: "";
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            border-radius: 1px;
-            background: transparentize($color: white, $amount: 0.1);
-          }
-          &-edge {
-            position: absolute;
-            &::after {
-              background: white;
-            }
-          }
-        }
       }
     }
   }
