@@ -1,7 +1,7 @@
 import Observable from "../Observable/Observable";
 import { ModelOptions } from "../Options";
-import ErrorBuilder from "./Error";
-import { _asArray } from "../tools";
+import ErrorBuilder from "../Error";
+import { _asArray, _isValidType } from "../tools";
 
 class Model extends Observable {
   private state!: ModelOptions;
@@ -26,10 +26,6 @@ class Model extends Observable {
         types = ["arrayOfNumbers"];
         break;
       }
-      /*case "connects": {
-        types = ["boolean", "arrayOfBooleans"];
-        break;
-      }*/
       case "step": {
         types = ["number"];
         break;
@@ -38,23 +34,13 @@ class Model extends Observable {
         types = ["number"];
         break;
       }
-      /*case "orientation": {
-        types = ["orientation"];
-        break;
-      }
-      case "displaySteps":
-      case "displayBubbles": {
-        types = ["boolean"];
-        break;
-      }*/
       default: {
         types = [];
       }
     }
-    if (this._isValidType(value, ...types)) {
+    if (_isValidType(value, ...types)) {
       return value;
     }
-
     return new ErrorBuilder(option, ...types);
   }
 
@@ -72,10 +58,6 @@ class Model extends Observable {
       "step",
       "margin",
       "values"
-      /*"connects",
-      "orientation",
-      "displaySteps",
-      "displayBubbles"*/
     ].filter(param => keys.includes(param));
     try {
       order.forEach(key => {
@@ -128,33 +110,6 @@ class Model extends Observable {
             }
             break;
           }
-          /*case "connects": {
-            const { values } = _state,
-              { connects } = options;
-            if (Array.isArray(connects)) {
-              if (_asArray(values).length != connects.length - 1) {
-                throw new ErrorBuilder(
-                  "connects",
-                  "boolean",
-                  "be an array and match handle count"
-                );
-              }
-            }
-            _state.connects = connects;
-            break;
-          }
-          case "orientation": {
-            _state.orientation = options.orientation;
-            break;
-          }
-          case "displaySteps": {
-            _state.displaySteps = options.displaySteps;
-            break;
-          }
-          case "displayBubbles": {
-            _state.displayBubbles = options.displayBubbles;
-            break;
-          }*/
         }
       });
       const state = keys.reduce(
@@ -197,38 +152,6 @@ class Model extends Observable {
 
   get values() {
     return this.state.values;
-  }
-
-  private _isValidType(value: any, ...types: Array<string>) {
-    let valid: Array<boolean> = [];
-    types.forEach(type => {
-      switch (type) {
-        case "number":
-        case "string":
-        case "boolean": {
-          valid.push(typeof value === type);
-          break;
-        }
-        case "arrayOfNumbers":
-        case "arrayOfStrings":
-        case "arrayOfBooleans": {
-          valid.push(
-            Array.isArray(value) &&
-              !!value.filter(
-                (a: any) => typeof a === type.slice(7, -1).toLowerCase()
-              )
-          );
-          break;
-        }
-        case "orientation": {
-          valid.push(value === "horizontal" || value === "vertical");
-        }
-        default: {
-          valid.push(false);
-        }
-      }
-    });
-    return valid.includes(true);
   }
 
   private _getValidatedRange(range: Array<number>) {

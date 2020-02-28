@@ -1,6 +1,6 @@
 import { Options, defaults } from "../Options";
 import Model from "./Model";
-import ErrorBuilder from "./Error";
+import ErrorBuilder from "../Error";
 import { expect, assert } from "chai";
 import "mocha";
 
